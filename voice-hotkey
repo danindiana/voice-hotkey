@@ -1,0 +1,23 @@
+#!/bin/bash
+# voice-hotkey — push-to-talk wrapper for Claude Code / any terminal
+# Captures focused window, records via voice-input, types transcript back into it.
+#
+# Stderr (status messages) shows in xterm for UX feedback.
+# Stdout (transcript only) is captured to tempfile, then typed via xdotool.
+
+FOCUSED=$(xdotool getactivewindow)
+TMPFILE=$(mktemp /tmp/voice-XXXXXX.txt)
+
+xterm -T "Push-to-Talk" -geometry 64x8-0+0 \
+    -fa "Monospace" -fs 11 \
+    -e "bash -c 'voice-input --mode print > \"$TMPFILE\"; echo; echo \"[closing in 1s]\"; sleep 1'" 2>/dev/null
+
+TRANSCRIPT=$(cat "$TMPFILE")
+rm -f "$TMPFILE"
+
+if [[ -n "$TRANSCRIPT" && "$TRANSCRIPT" != *"[voice-input] Error"* ]]; then
+    xdotool windowfocus --sync "$FOCUSED"
+    sleep 0.15
+    xdotool type --clearmodifiers --delay 20 -- "$TRANSCRIPT"
+    xdotool key Return
+fi

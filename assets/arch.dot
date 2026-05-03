@@ -1,0 +1,130 @@
+digraph architecture {
+    bgcolor="#0d0d0d"
+    fontname="Monospace"
+    fontcolor="#ffffff"
+    compound=true
+    pad=0.6
+    splines=spline
+    nodesep=0.5
+    ranksep=0.8
+
+    node [
+        style="filled,rounded"
+        fontname="Monospace"
+        fontcolor="#ffffff"
+        fontsize=12
+        penwidth=2
+        shape=box
+        margin="0.2,0.15"
+    ]
+
+    edge [
+        fontname="Monospace"
+        fontsize=10
+        penwidth=2
+        fontcolor="#888888"
+    ]
+
+    // ── Hardware ─────────────────────────────────
+    subgraph cluster_hw {
+        bgcolor="#1a0800"
+        color="#ff8c00"
+        fontcolor="#ff8c00"
+        fontname="Monospace"
+        fontsize=13
+        label="  Hardware  "
+        penwidth=2.5
+        style="rounded"
+
+        UC03 [label="UC03 USB Headset\n32 kHz mono mic"  fillcolor="#200d00" color="#ff8c00"]
+        GPU  [label="NVIDIA RTX 5080\n16 GB  CUDA 13"    fillcolor="#200d00" color="#ff073a"]
+    }
+
+    // ── OS / Audio ───────────────────────────────
+    subgraph cluster_os {
+        bgcolor="#001200"
+        color="#39ff14"
+        fontcolor="#39ff14"
+        fontname="Monospace"
+        fontsize=13
+        label="  Linux Userspace  "
+        penwidth=2.5
+        style="rounded"
+
+        PW   [label="PipeWire\naudio server"   fillcolor="#001900" color="#39ff14"]
+        XORG [label="X11 / Xorg\nwindow system" fillcolor="#001900" color="#39ff14"]
+    }
+
+    // ── Daemons ──────────────────────────────────
+    subgraph cluster_daemon {
+        bgcolor="#001933"
+        color="#0ff0fc"
+        fontcolor="#0ff0fc"
+        fontname="Monospace"
+        fontsize=13
+        label="  Daemons  "
+        penwidth=2.5
+        style="rounded"
+
+        XBIND [label="xbindkeys\n~/.xbindkeysrc"  fillcolor="#001122" color="#0ff0fc"]
+        XDO   [label="xdotool\nX11 automation"    fillcolor="#001122" color="#0ff0fc"]
+    }
+
+    // ── Orchestrator ─────────────────────────────
+    subgraph cluster_hotkey {
+        bgcolor="#0a0018"
+        color="#bc13fe"
+        fontcolor="#bc13fe"
+        fontname="Monospace"
+        fontsize=13
+        label="  voice-hotkey (bash)  "
+        penwidth=2.5
+        style="rounded"
+
+        VH    [label="voice-hotkey\norchestrator"      fillcolor="#110022" color="#bc13fe"]
+        XTERM [label="xterm PTY\nPush-to-Talk UI"      fillcolor="#110022" color="#bc13fe"]
+        TMPF  [label="/tmp/voice-*.txt\ntranscript buf" fillcolor="#110022" color="#ffff00"
+               shape=note style="filled"]
+    }
+
+    // ── Speech-to-Text ───────────────────────────
+    subgraph cluster_stt {
+        bgcolor="#120000"
+        color="#ff073a"
+        fontcolor="#ff073a"
+        fontname="Monospace"
+        fontsize=13
+        label="  Speech-to-Text (Rust)  "
+        penwidth=2.5
+        style="rounded"
+
+        VI   [label="voice-input\n--mode print"    fillcolor="#1a0000" color="#ff073a"]
+        WCPP [label="whisper.cpp\nlarge-v3 GGML"   fillcolor="#1a0000" color="#ff073a"]
+    }
+
+    // ── Target ───────────────────────────────────
+    CC [
+        label="Claude Code CLI\nclaude --dangerously-skip-permissions"
+        fillcolor="#0d0d1a"
+        color="#bc13fe"
+        penwidth=3
+        fontsize=13
+    ]
+
+    // ── Edges ────────────────────────────────────
+    UC03  -> PW    [label="32kHz PCM"         color="#ff8c00"]
+    GPU   -> WCPP  [label="CUDA kernels"       color="#ff073a" style=dashed]
+    PW    -> VI    [label="audio stream"       color="#39ff14"]
+    XORG  -> XBIND [label="key events"        color="#0ff0fc"]
+
+    XBIND -> VH    [label="Ctrl+Alt+V"         color="#bc13fe" penwidth=3]
+    VH    -> XDO   [label="window ops"         color="#0ff0fc"]
+    VH    -> XTERM [label="spawn"              color="#bc13fe"]
+    VH    -> TMPF  [label="mktemp"             color="#ffff00"]
+    XTERM -> VI    [label="exec"               color="#ff073a"]
+    VI    -> WCPP  [label="PCM samples"        color="#ff073a"]
+    WCPP  -> VI    [label="transcript text"    color="#ff073a"]
+    VI    -> TMPF  [label="stdout →\ntranscript" color="#ffff00"]
+    TMPF  -> VH    [label="cat"                color="#ffff00"]
+    XDO   -> CC    [label="type + Return"      color="#bc13fe" penwidth=3]
+}

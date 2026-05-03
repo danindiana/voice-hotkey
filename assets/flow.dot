@@ -1,0 +1,141 @@
+digraph voice_flow {
+    rankdir=TB
+    bgcolor="#0d0d0d"
+    fontname="Monospace"
+    fontcolor="#ffffff"
+    pad=0.5
+    splines=spline
+    nodesep=0.6
+    ranksep=0.7
+
+    node [
+        style="filled,rounded"
+        fontname="Monospace"
+        fontcolor="#ffffff"
+        fontsize=13
+        penwidth=2.5
+        shape=box
+        margin="0.25,0.15"
+    ]
+
+    edge [
+        fontname="Monospace"
+        fontsize=10
+        penwidth=2
+        fontcolor="#aaaaaa"
+    ]
+
+    // ── User ──────────────────────────────────────
+    KEY [
+        label="⌨  Ctrl+Alt+V\nkeypress"
+        fillcolor="#1a0033"
+        color="#bc13fe"
+    ]
+
+    // ── Daemon ────────────────────────────────────
+    XBIND [
+        label="xbindkeys\nhotkey daemon"
+        fillcolor="#001933"
+        color="#0ff0fc"
+    ]
+
+    // ── voice-hotkey script cluster ───────────────
+    subgraph cluster_hotkey {
+        bgcolor="#030d03"
+        color="#39ff14"
+        fontcolor="#39ff14"
+        fontname="Monospace"
+        fontsize=12
+        label="  /usr/local/bin/voice-hotkey  "
+        penwidth=2.5
+        style="rounded"
+
+        FOCUS [
+            label="xdotool getactivewindow\n→ save FOCUSED window ID"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+        MKTEMP [
+            label="mktemp /tmp/voice-*.txt\n→ TMPFILE"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+        XTERM [
+            label="xterm -geometry 64x8\nPush-to-Talk UI"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+        READTMP [
+            label="TRANSCRIPT=\$(cat TMPFILE)\nrm -f TMPFILE"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+        REFOCUS [
+            label="xdotool windowfocus\n→ restore FOCUSED"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+        TYPE [
+            label="xdotool type TRANSCRIPT\nxdotool key Return"
+            fillcolor="#071207"
+            color="#39ff14"
+        ]
+    }
+
+    // ── voice-input subprocess ─────────────────────
+    subgraph cluster_voice {
+        bgcolor="#0d0300"
+        color="#ff8c00"
+        fontcolor="#ff8c00"
+        fontname="Monospace"
+        fontsize=12
+        label="  voice-input --mode print (Rust)  "
+        penwidth=2.5
+        style="rounded"
+
+        MIC [
+            label="PipeWire capture\nalsa_input UC03 @ 32kHz"
+            fillcolor="#110500"
+            color="#ff8c00"
+        ]
+        HOLD [
+            label="[ speak your prompt ]\npress Enter to stop"
+            fillcolor="#110500"
+            color="#ffff00"
+            style="filled,dashed"
+        ]
+        WHISPER [
+            label="whisper.cpp large-v3\nGPU inference (CUDA)"
+            fillcolor="#110500"
+            color="#ff073a"
+        ]
+        STDOUT [
+            label="stdout → TMPFILE\n(stderr → xterm display)"
+            fillcolor="#110500"
+            color="#ffff00"
+        ]
+    }
+
+    // ── Target ────────────────────────────────────
+    CLAUDE [
+        label="Claude Code CLI\nreceives & executes prompt"
+        fillcolor="#0d0d1a"
+        color="#bc13fe"
+        penwidth=3
+    ]
+
+    // ── Edges ────────────────────────────────────
+    KEY     -> XBIND    [color="#bc13fe"]
+    XBIND   -> FOCUS    [color="#0ff0fc"]
+    FOCUS   -> MKTEMP   [color="#39ff14"]
+    MKTEMP  -> XTERM    [color="#39ff14"]
+    XTERM   -> MIC      [color="#ff8c00" label="spawn subprocess"]
+    MIC     -> HOLD     [color="#ff8c00"]
+    HOLD    -> WHISPER  [color="#ff073a" label="PCM samples"]
+    WHISPER -> STDOUT   [color="#ffff00" label="transcript text"]
+    STDOUT  -> READTMP  [color="#39ff14" label="written to TMPFILE"]
+    READTMP -> REFOCUS  [color="#39ff14"]
+    FOCUS   -> REFOCUS  [color="#39ff14" style=dashed label="window ID\n(passed through)" constraint=false]
+    REFOCUS -> TYPE     [color="#39ff14"]
+    TYPE    -> CLAUDE   [color="#bc13fe" penwidth=3]
+}

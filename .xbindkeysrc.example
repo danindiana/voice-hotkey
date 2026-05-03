@@ -1,0 +1,7 @@
+# xbindkeys config for voice-hotkey
+# Copy to ~/.xbindkeysrc and reload: pkill xbindkeys && xbindkeys
+#
+# To discover key names: run `xbindkeys --key` and press the desired combo
+
+"/usr/local/bin/voice-hotkey"
+  Control+alt+v

@@ -19,5 +19,4 @@ if [[ -n "$TRANSCRIPT" && "$TRANSCRIPT" != *"[voice-input] Error"* ]]; then
     xdotool windowfocus --sync "$FOCUSED"
     sleep 0.15
     xdotool type --clearmodifiers --delay 20 -- "$TRANSCRIPT"
-    xdotool key Return
 fi
